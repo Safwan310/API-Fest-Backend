@@ -1,15 +1,18 @@
 import tweepy
 import configparser
 import pandas as pd
+import os
 
 config = configparser.ConfigParser()
 config.read('config.ini')
 
-api_key = config['twitter']['api_key']
-api_key_secret = config['twitter']['api_key_secret']
+api_key = os.environ.get("api_key")
+api_key_secret = os.environ.get("api_key_secret")
 
-access_token = config['twitter']['access_token']
-access_token_secret = config['twitter']['access_token_secret']
+access_token = os.environ.get("access_token")
+access_token_secret = os.environ.get("access_token_secret")
+
+print(api_key)
 
 #authentication 
 auth = tweepy.OAuthHandler(api_key,api_key_secret)
