@@ -20,9 +20,9 @@ api = tweepy.API(auth)
 
 def tweet_fetcher(keyword):
     data = []
-    limit = 300
+    limit = 100
 
-    tweets = tweepy.Cursor(api.search_tweets, q=keyword,count=100,tweet_mode='extended').items(limit)
+    tweets = tweepy.Cursor(api.search_tweets, q=keyword,count=100,tweet_mode='extended',lang="en").items(limit)
 
     for tweet in tweets:
         data.append(tweet.full_text)
