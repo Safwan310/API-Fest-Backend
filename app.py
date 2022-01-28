@@ -1,35 +1,70 @@
 import os
-from flask import Flask,request,jsonify
+from flask import Flask,request,jsonify, json, Response, make_response, render_template
 from twitter_api import tweet_fetcher 
 from flask_pymongo import PyMongo
+from flask_bcrypt import Bcrypt
+import jwt
 
 app = Flask(__name__)
+bcrypt = Bcrypt(app)
 
 mongodb_client = PyMongo(app,uri=os.environ.get("MONGO_URI"))
 db = mongodb_client.db
 
-@app.route("/")
+@app.route("/", methods=['GET'])
 def hello_world():
-    return "<h1>Hello, World!</h1>"
+    return render_template('index.html')
 
-@app.route("/login")
+@app.route("/login", methods=['POST'])
 def login_user():
-    pass
-
-@app.route("/register")
-def register_user():
-    user_details = request.json
-    full_name = user_details["fullName"]
-    email = user_details["email"]
-    password = user_details["password"]
-    response = {}
     try:
-        db.users.insert_one({'fullName':full_name,'email':email,'password':password})
-        response["message"] = "User created successfully"
-        return jsonify(response),201
-    except:
-        response["message"] = "Internal server error"
-        return  jsonify(response),500
+        if request.method == 'POST':
+            form_data = request.get_json()
+            email = form_data['email']
+            password = form_data['password']
+            if(email != '' and password != ''):
+                data = list(db.users.find({'email': email}))
+                if(len(data) == 0):
+                    return Response(status=404, response=json.dumps({'message': 'user does not exist'}), mimetype='application/json')
+                else:
+                    data = data[0]
+                    if(bcrypt.check_password_hash(data['password_hash'], password)):
+                        token = jwt.encode({'email': email}, app.config['SECRET_KEY'])
+                        return make_response(jsonify({'token': token.decode('UTF-8')}), 201)
+                    else:
+                        return Response(status=402, response=json.dumps({'message': 'Invalid password'}), mimetype='application/json')
+            else:
+                return Response(status=400, response=json.dumps({'message': 'Bad request'}), mimetype='application/json')
+        else:
+            return Response(status=401, response=json.dumps({'message': 'invalid request type'}), mimetype='application/json')
+    except Exception as Ex:
+        print('\n\n\n*********************************')
+        print(Ex)
+        print('*********************************\n\n\n')
+        return Response(response=json.dumps({'message': Ex}), status=500, mimetype="application/json")
+
+
+@app.route("/register", methods=['POST'])
+def register_user():
+    try:
+        if request.method == "POST":
+            user_details = request.get_json()
+            full_name = user_details["fullName"]
+            email = user_details["email"]
+            password = user_details["password"]
+            password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+            if (full_name != '' and email != '' and password_hash != ''):
+                db.users.insert_one({'fullName':full_name,'email':email,'password':password_hash})
+                return Response(response=json.dumps({'message': 'User created successfully'}), status=200, mimetype="application/json")
+            else:
+                return Response(status=400, response=json.dumps({'message': 'Please enter your details'}), mimetype='application/json')
+        else:
+            return Response(status=400, response=json.dumps({'message': 'Bad request'}), mimetype='application/json')
+    except Exception as Ex:
+        print('\n\n\n*********************************')
+        print(Ex)
+        print('*********************************\n\n\n')
+        return Response(response=json.dumps({'message': Ex}), status=500, mimetype="application/json")        
 
 @app.route("/getSentiment",methods=["POST"])
 def sentiment_analyzer():
@@ -40,4 +75,4 @@ def sentiment_analyzer():
     return jsonify(tweet_obj)
 
 if __name__ == '__main__':
-    app.run()
+    app.run() 
