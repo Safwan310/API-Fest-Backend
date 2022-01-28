@@ -12,8 +12,6 @@ api_key_secret = os.environ.get("api_key_secret")
 access_token = os.environ.get("access_token")
 access_token_secret = os.environ.get("access_token_secret")
 
-print(api_key)
-
 #authentication 
 auth = tweepy.OAuthHandler(api_key,api_key_secret)
 auth.set_access_token(access_token, access_token_secret)
