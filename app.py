@@ -28,7 +28,7 @@ def login_user():
                     return Response(status=404, response=json.dumps({'message': 'user does not exist'}), mimetype='application/json')
                 else:
                     data = data[0]
-                    if(bcrypt.check_password_hash(data['password_hash'], password)):
+                    if(bcrypt.check_password_hash(data['password'], password)):
                         token = jwt.encode({'email': email}, app.config['SECRET_KEY'])
                         return make_response(jsonify({'token': token.decode('UTF-8')}), 201)
                     else:
