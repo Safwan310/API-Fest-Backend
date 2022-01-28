@@ -3,7 +3,7 @@ from flask import Flask,request,jsonify, json, Response, make_response, render_t
 from twitter_api import tweet_fetcher 
 from flask_pymongo import PyMongo
 from flask_bcrypt import Bcrypt
-import jwt
+#import jwt
 
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
@@ -29,8 +29,8 @@ def login_user():
                 else:
                     data = data[0]
                     if(bcrypt.check_password_hash(data['password'], password)):
-                        token = jwt.encode({'email': email}, app.config['SECRET_KEY'])
-                        return make_response(jsonify({'token': token.decode('UTF-8')}), 201)
+                        #token =jwt.encode({'email': email}, app.config['SECRET_KEY'])
+                        return make_response(jsonify({'message':'User logged in successfully'}), 201)
                     else:
                         return Response(status=402, response=json.dumps({'message': 'Invalid password'}), mimetype='application/json')
             else:
@@ -64,7 +64,7 @@ def register_user():
         print('\n\n\n*********************************')
         print(Ex)
         print('*********************************\n\n\n')
-        return Response(response=json.dumps({'message': Ex}), status=500, mimetype="application/json")        
+        return Response(response=json.dumps({'message': "Internal Server Error"}), status=500, mimetype="application/json")        
 
 @app.route("/getSentiment",methods=["POST"])
 def sentiment_analyzer():
