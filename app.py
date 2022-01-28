@@ -41,7 +41,7 @@ def login_user():
         print('\n\n\n*********************************')
         print(Ex)
         print('*********************************\n\n\n')
-        return Response(response=json.dumps({'message': Ex}), status=500, mimetype="application/json")
+        return Response(response=json.dumps({'message': "Internal Server error"}), status=500, mimetype="application/json")
 
 
 @app.route("/register", methods=['POST'])
