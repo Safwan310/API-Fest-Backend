@@ -1,8 +1,14 @@
 import os
 from flask import Flask,request,jsonify, json, Response, make_response, render_template
-from twitter_api import tweet_fetcher 
 from flask_pymongo import PyMongo
 from flask_bcrypt import Bcrypt
+import tweepy
+import re
+from textblob import TextBlob
+import matplotlib
+matplotlib.use('agg')
+
+
 #import jwt
 
 app = Flask(__name__)
@@ -11,9 +17,96 @@ bcrypt = Bcrypt(app)
 mongodb_client = PyMongo(app,uri=os.environ.get("MONGO_URI"))
 db = mongodb_client.db
 
+class SentimentAnalysis:
+ 
+
+    def __init__(self):
+        self.tweets = []
+        self.tweetText = []
+    
+    def DownloadData(self, keyword, tweets):
+
+        consumerKey = os.environ.get("api_key")
+        consumerSecret = os.environ.get("api_key_secret")
+        accessToken = os.environ.get("access_token")
+        accessTokenSecret = os.environ.get("access_token_secret")
+        auth = tweepy.OAuthHandler(consumerKey, consumerSecret)
+        auth.set_access_token(accessToken, accessTokenSecret)
+        api = tweepy.API(auth, wait_on_rate_limit=True)
+ 
+        tweets = int(tweets)
+
+        self.tweets = tweepy.Cursor(api.search_tweets, q=keyword, lang="en").items(tweets)
+        polarity = 0
+        positive = 0
+        wpositive = 0
+        spositive = 0
+        negative = 0
+        wnegative = 0
+        snegative = 0
+        neutral = 0
+
+        for tweet in self.tweets:
+
+            self.tweetText.append(self.cleanTweet(tweet.text).encode('utf-8'))
+
+            analysis = TextBlob(tweet.text)
+
+            polarity += analysis.sentiment.polarity
+
+            if (analysis.sentiment.polarity == 0):
+                neutral += 1
+            elif (analysis.sentiment.polarity > 0 and analysis.sentiment.polarity <= 0.3):
+                wpositive += 1
+            elif (analysis.sentiment.polarity > 0.3 and analysis.sentiment.polarity <= 0.6):
+                positive += 1
+            elif (analysis.sentiment.polarity > 0.6 and analysis.sentiment.polarity <= 1):
+                spositive += 1
+            elif (analysis.sentiment.polarity > -0.3 and analysis.sentiment.polarity <= 0):
+                wnegative += 1
+            elif (analysis.sentiment.polarity > -0.6 and analysis.sentiment.polarity <= -0.3):
+                negative += 1
+            elif (analysis.sentiment.polarity > -1 and analysis.sentiment.polarity <= -0.6):
+                snegative += 1
+
+        positive = self.percentage(positive, tweets)
+        wpositive = self.percentage(wpositive, tweets)
+        spositive = self.percentage(spositive, tweets)
+        negative = self.percentage(negative, tweets)
+        wnegative = self.percentage(wnegative, tweets)
+        snegative = self.percentage(snegative, tweets)
+        neutral = self.percentage(neutral, tweets)
+
+        polarity = polarity / tweets
+ 
+        if (polarity == 0):
+            htmlpolarity = "Neutral"
+        elif (polarity > 0 and polarity <= 0.3):
+            htmlpolarity = "Weakly Positive"
+        elif (polarity > 0.3 and polarity <= 0.6):
+            htmlpolarity = "Positive"
+        elif (polarity > 0.6 and polarity <= 1):
+            htmlpolarity = "Strongly Positive"
+        elif (polarity > -0.3 and polarity <= 0):
+            htmlpolarity = "Weakly Negative"
+        elif (polarity > -0.6 and polarity <= -0.3):
+            htmlpolarity = "Negative"
+        elif (polarity > -1 and polarity <= -0.6):
+            htmlpolarity = "strongly Negative"
+        
+
+        return polarity, htmlpolarity, positive, wpositive, spositive, negative, wnegative, snegative, neutral, keyword, tweets
+
+    def cleanTweet(self, tweet):
+        return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t]) | (\w +:\ / \ / \S +)", " ", tweet).split())
+
+    def percentage(self, part, whole):
+        temp = 100 * float(part) / float(whole)
+        return format(temp, '.2f')
+
 @app.route("/", methods=['GET'])
 def hello_world():
-    return render_template('index.html')
+    return "Working"
 
 @app.route("/login", methods=['POST'])
 def login_user():
@@ -68,11 +161,32 @@ def register_user():
 
 @app.route("/getSentiment",methods=["POST"])
 def sentiment_analyzer():
-    content = request.json
-    tweets = tweet_fetcher(content["hashtag"])
-    tweet_obj = {}
-    tweet_obj["tweets"] = tweets
-    return jsonify(tweet_obj)
+    tweet_info = request.get_json()
+    keyword = tweet_info["keyword"]
+    tweets = tweet_info["tweets"]
+    sa = SentimentAnalysis()
+    polarity, htmlpolarity, positive, wpositive, spositive, negative, wnegative, snegative, neutral, keyword1, tweet1 = sa.DownloadData(keyword, tweets)
+    analysis = {}
+    analysis["polarity"] = polarity
+    analysis["htmlpolarity"] = htmlpolarity
+    analysis["wpositive"] = wpositive
+    analysis["spositive"] = spositive
+    analysis["negative"] = negative
+    analysis["wnegative"] = wnegative
+    analysis["snegative"] = polarity
+    analysis["neutral"] = neutral
+    analysis["keyword1"] = keyword1
+    analysis["tweet1"] = polarity
+    return jsonify(analysis)
+    # content = request.json
+    # tweets = tweet_fetcher(content["hashtag"])
+    # tweet_obj = {}
+    # tweet_obj["tweets"] = tweets
+    # return jsonify(tweet_obj)
+
+ 
 
 if __name__ == '__main__':
-    app.run() 
+    app.run()
+
+    
