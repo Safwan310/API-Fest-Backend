@@ -20,16 +20,16 @@ def login_user():
     try:
         if request.method == 'POST':
             form_data = request.get_json()
-            user_name = form_data['user_name']
+            email = form_data['email']
             password = form_data['password']
-            if(user_name != '' and password != ''):
-                data = list(db.users.find({'fullName': user_name}))
+            if(email != '' and password != ''):
+                data = list(db.users.find({'email': email}))
                 if(len(data) == 0):
                     return Response(status=404, response=json.dumps({'message': 'user does not exist'}), mimetype='application/json')
                 else:
                     data = data[0]
                     if(bcrypt.check_password_hash(data['password_hash'], password)):
-                        token = jwt.encode({'fullName': user_name}, app.config['SECRET_KEY'])
+                        token = jwt.encode({'email': email}, app.config['SECRET_KEY'])
                         return make_response(jsonify({'token': token.decode('UTF-8')}), 201)
                     else:
                         return Response(status=402, response=json.dumps({'message': 'Invalid password'}), mimetype='application/json')
