@@ -1,6 +1,6 @@
 # API-Fest-Backend
 - [Frontend repository](https://github.com/HimikaP/Team-Jalebi-Fafda)
-- [Deployed frontend]()
+- [Deployed frontend](https://competent-jones-2df1fb.netlify.app/)
 
 ### API Link
 - https://sentimental-analysis33.herokuapp.com
