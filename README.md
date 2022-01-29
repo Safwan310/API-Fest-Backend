@@ -14,7 +14,7 @@
   "tweets": 100
   }
   ```
-  - Response: 
+  - Sample Response: 
   ```js
   {
    "final_sentiment": "Positive",
@@ -32,7 +32,7 @@
   "tweets": 100
   }
   ```
-  - Response:
+  - Sample Response:
   ```js
   {
    "tweets": [
