@@ -1,6 +1,9 @@
 # API-Fest-Backend
 - [Frontend repository](https://github.com/HimikaP/Team-Jalebi-Fafda)
 - [Deployed frontend]()
+
+### API Link
+- https://sentimental-analysis33.herokuapp.com
 ### Available Endpoints
 - /getSentiment
   - Returns the public sentiment over an event/topic by parsing tweets on that hashtag/keyword
