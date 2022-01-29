@@ -2,6 +2,7 @@ import os
 from flask import Flask,request,jsonify, json, Response, make_response, render_template
 from flask_pymongo import PyMongo
 from flask_bcrypt import Bcrypt
+from flask_cors import CORS
 import tweepy
 import re
 from textblob import TextBlob
@@ -13,7 +14,7 @@ matplotlib.use('agg')
 
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
-
+CORS(app)
 mongodb_client = PyMongo(app,uri=os.environ.get("MONGO_URI"))
 db = mongodb_client.db
 
