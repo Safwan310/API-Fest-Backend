@@ -17,26 +17,32 @@ bcrypt = Bcrypt(app)
 CORS(app)
 mongodb_client = PyMongo(app,uri=os.environ.get("MONGO_URI"))
 db = mongodb_client.db
+consumerKey = os.environ.get("api_key")
+consumerSecret = os.environ.get("api_key_secret")
+accessToken = os.environ.get("access_token")
+accessTokenSecret = os.environ.get("access_token_secret")
+auth = tweepy.OAuthHandler(consumerKey, consumerSecret)
+auth.set_access_token(accessToken, accessTokenSecret)
+api = tweepy.API(auth, wait_on_rate_limit=True)
 
 class SentimentAnalysis:
- 
+        
 
     def __init__(self):
         self.tweets = []
         self.tweetText = []
-    
-    def DownloadData(self, keyword, tweets):
 
-        consumerKey = os.environ.get("api_key")
-        consumerSecret = os.environ.get("api_key_secret")
-        accessToken = os.environ.get("access_token")
-        accessTokenSecret = os.environ.get("access_token_secret")
-        auth = tweepy.OAuthHandler(consumerKey, consumerSecret)
-        auth.set_access_token(accessToken, accessTokenSecret)
-        api = tweepy.API(auth, wait_on_rate_limit=True)
+    def fetch_tweets(self,keyword,tweets):
+        tweets = int(tweets)
+        res_tweets = tweepy.Cursor(api.search_tweets, q=keyword, lang="en",tweet_mode='extended').items(tweets)
+        final_list = []
+        for tweet in res_tweets:
+            final_list.append(tweet.full_text)
+        return final_list
+
+    def DownloadData(self, keyword, tweets):
  
         tweets = int(tweets)
-
         self.tweets = tweepy.Cursor(api.search_tweets, q=keyword, lang="en").items(tweets)
         polarity = 0
         positive = 0
@@ -172,7 +178,16 @@ def sentiment_analyzer():
     analysis["neutral"] = neutral
     return jsonify(analysis)
 
- 
+@app.route("/getTweets",methods=["POST"])
+def tweet_fetcher():
+    tweet_info = request.get_json()
+    keyword = tweet_info["keyword"]
+    tweets = tweet_info["tweets"]
+    sa = SentimentAnalysis()
+    tweets = sa.fetch_tweets(keyword, tweets)
+    tweets_response = {}
+    tweets_response["tweets"] = list(tweets)
+    return jsonify(tweets_response)
 
 if __name__ == '__main__':
     app.run()
