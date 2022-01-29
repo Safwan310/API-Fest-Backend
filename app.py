@@ -78,24 +78,22 @@ class SentimentAnalysis:
         neutral = self.percentage(neutral, tweets)
 
         polarity = polarity / tweets
- 
-        if (polarity == 0):
-            htmlpolarity = "Neutral"
-        elif (polarity > 0 and polarity <= 0.3):
-            htmlpolarity = "Weakly Positive"
-        elif (polarity > 0.3 and polarity <= 0.6):
-            htmlpolarity = "Positive"
-        elif (polarity > 0.6 and polarity <= 1):
-            htmlpolarity = "Strongly Positive"
-        elif (polarity > -0.3 and polarity <= 0):
-            htmlpolarity = "Weakly Negative"
-        elif (polarity > -0.6 and polarity <= -0.3):
-            htmlpolarity = "Negative"
-        elif (polarity > -1 and polarity <= -0.6):
-            htmlpolarity = "strongly Negative"
+    
+        final_positive = float(positive)+float(wpositive)+float(spositive)
+        final_negative = float(negative)+float(wnegative)+float(snegative)
+        neutral = float(neutral)
         
+        result = final_positive if final_positive > final_negative else final_negative
+        final_result = result if result > neutral else neutral
 
-        return polarity, htmlpolarity, positive, wpositive, spositive, negative, wnegative, snegative, neutral, keyword, tweets
+        if final_result == final_positive:
+            htmlpolarity = "Positive"
+        elif final_result == final_negative:
+            htmlpolarity = "Negative"
+        else:
+            htmlpolarity = "Neutral"
+        
+        return htmlpolarity,final_negative,final_positive,neutral,polarity
 
     def cleanTweet(self, tweet):
         return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t]) | (\w +:\ / \ / \S +)", " ", tweet).split())
@@ -165,24 +163,13 @@ def sentiment_analyzer():
     keyword = tweet_info["keyword"]
     tweets = tweet_info["tweets"]
     sa = SentimentAnalysis()
-    polarity, htmlpolarity, positive, wpositive, spositive, negative, wnegative, snegative, neutral, keyword1, tweet1 = sa.DownloadData(keyword, tweets)
+    htmlpolarity,negative,positive,neutral,polarity = sa.DownloadData(keyword, tweets)
     analysis = {}
-    analysis["polarity"] = polarity
-    analysis["htmlpolarity"] = htmlpolarity
-    analysis["wpositive"] = wpositive
-    analysis["spositive"] = spositive
+    analysis["final_sentiment"] = htmlpolarity
+    analysis["positive"] = positive
     analysis["negative"] = negative
-    analysis["wnegative"] = wnegative
-    analysis["snegative"] = polarity
     analysis["neutral"] = neutral
-    analysis["keyword1"] = keyword1
-    analysis["tweet1"] = polarity
     return jsonify(analysis)
-    # content = request.json
-    # tweets = tweet_fetcher(content["hashtag"])
-    # tweet_obj = {}
-    # tweet_obj["tweets"] = tweets
-    # return jsonify(tweet_obj)
 
  
 
